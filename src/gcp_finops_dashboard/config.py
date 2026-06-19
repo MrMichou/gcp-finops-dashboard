@@ -32,6 +32,7 @@ _ENV_KEYS = {
     "billing_account_id": "GCP_FINOPS_BILLING_ACCOUNT",
     "bq_table": "GCP_FINOPS_BQ_TABLE",
     "billing_project": "GCP_FINOPS_BILLING_PROJECT",
+    "slack_webhook": "GCP_FINOPS_SLACK_WEBHOOK",
 }
 
 
@@ -56,6 +57,7 @@ class Config:
     currency: str | None = None
     audit: bool = False
     required_labels: list[str] = field(default_factory=list)
+    slack_webhook: str | None = None
     dry_run: bool = False
 
     @property

@@ -85,6 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Label keys every resource must carry; missing ones are flagged as untagged.",
     )
     parser.add_argument(
+        "--slack-webhook",
+        metavar="URL",
+        help="Slack incoming-webhook URL; posts a run summary "
+        "(env: GCP_FINOPS_SLACK_WEBHOOK).",
+    )
+    parser.add_argument(
         "--config-file",
         metavar="PATH",
         help="Path to a TOML/YAML/JSON config file.",
@@ -127,6 +133,8 @@ def _cli_overrides(args: argparse.Namespace) -> dict[str, Any]:
         overrides["audit"] = True
     if args.required_labels:
         overrides["required_labels"] = args.required_labels
+    if args.slack_webhook:
+        overrides["slack_webhook"] = args.slack_webhook
     if args.dry_run:
         overrides["dry_run"] = True
     return overrides
@@ -167,6 +175,16 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         for path in written:
             console.print(f"[green]Wrote[/green] {path}")
+
+    if config.slack_webhook:
+        from gcp_finops_dashboard.notifications import send_slack_summary
+
+        try:
+            send_slack_summary(config.slack_webhook, data)
+        except Exception as exc:  # a notification failure must not fail the run
+            console.print(f"[yellow]Slack notification failed:[/yellow] {exc}")
+        else:
+            console.print("[green]Sent[/green] Slack summary")
 
     return 0
 
