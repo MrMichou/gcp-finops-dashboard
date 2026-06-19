@@ -9,6 +9,7 @@ from gcp_finops_dashboard.models import (
     BudgetInfo,
     DashboardData,
     ProjectCost,
+    ResourceFinding,
     ServiceCost,
     TrendPoint,
 )
@@ -45,5 +46,50 @@ def sample_dashboard() -> DashboardData:
         budgets=[
             BudgetInfo("Monthly Org Budget", 8000.0, "USD", [0.5, 0.9, 1.0], spent=7577.09),
             BudgetInfo("Data Platform Cap", 2500.0, "USD", [0.8, 1.0], spent=2103.91),
+        ],
+        findings=[
+            ResourceFinding(
+                resource_type="compute_instance",
+                name="legacy-batch-runner",
+                project_id="sandbox",
+                location="us-central1-a",
+                issue="stopped",
+                detail="Instance is TERMINATED but still reserves disks/IPs that may bill.",
+                estimated_monthly_cost=18.40,
+            ),
+            ResourceFinding(
+                resource_type="persistent_disk",
+                name="orphaned-data-disk",
+                project_id="data-platform",
+                location="us-central1-a",
+                issue="unattached",
+                detail="Disk is not attached to any instance (200 GB) but still bills.",
+                estimated_monthly_cost=8.00,
+            ),
+            ResourceFinding(
+                resource_type="static_ip",
+                name="old-lb-ip",
+                project_id="prod-app",
+                location="us-central1",
+                issue="idle",
+                detail="Static IP is RESERVED but not in use; reserved unused IPs bill.",
+                estimated_monthly_cost=7.30,
+            ),
+            ResourceFinding(
+                resource_type="gcs_bucket",
+                name="prod-app-uploads",
+                project_id="prod-app",
+                location="US",
+                issue="no_lifecycle",
+                detail="Bucket has no lifecycle rules; old objects accumulate cost.",
+            ),
+            ResourceFinding(
+                resource_type="cloud_function",
+                name="webhook-handler",
+                project_id="sandbox",
+                location="",
+                issue="untagged",
+                detail="Missing required label(s): team, env.",
+            ),
         ],
     )

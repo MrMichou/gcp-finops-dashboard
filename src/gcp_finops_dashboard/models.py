@@ -61,6 +61,23 @@ class BudgetInfo:
         return None
 
 
+@dataclass(frozen=True)
+class ResourceFinding:
+    """A potentially wasteful or non-compliant resource flagged by the audit.
+
+    Findings are derived purely from listing APIs (no Cloud Monitoring), so the
+    detection logic stays testable without credentials.
+    """
+
+    resource_type: str  # e.g. compute_instance, persistent_disk, gcs_bucket
+    name: str
+    project_id: str
+    location: str  # zone/region, or "" when global/not applicable
+    issue: str  # one of: stopped, unattached, idle, untagged, no_lifecycle
+    detail: str  # human-readable explanation
+    estimated_monthly_cost: float | None = None
+
+
 @dataclass
 class DashboardData:
     """Everything needed to render or export a dashboard run."""
@@ -73,6 +90,7 @@ class DashboardData:
     project_costs: list[ProjectCost] = field(default_factory=list)
     trend: list[TrendPoint] = field(default_factory=list)
     budgets: list[BudgetInfo] = field(default_factory=list)
+    findings: list[ResourceFinding] = field(default_factory=list)
 
     @property
     def currency(self) -> str:

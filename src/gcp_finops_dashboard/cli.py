@@ -73,6 +73,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory for exported reports (default: ./reports).",
     )
     parser.add_argument(
+        "--audit",
+        action="store_true",
+        help="Audit resources for waste/compliance (stopped VMs, unattached disks, "
+        "idle IPs, buckets without lifecycle, untagged resources).",
+    )
+    parser.add_argument(
+        "--required-labels",
+        nargs="+",
+        metavar="KEY",
+        help="Label keys every resource must carry; missing ones are flagged as untagged.",
+    )
+    parser.add_argument(
         "--config-file",
         metavar="PATH",
         help="Path to a TOML/YAML/JSON config file.",
@@ -111,6 +123,10 @@ def _cli_overrides(args: argparse.Namespace) -> dict[str, Any]:
         overrides["report_types"] = args.report_type
     if args.output_dir:
         overrides["output_dir"] = args.output_dir
+    if args.audit:
+        overrides["audit"] = True
+    if args.required_labels:
+        overrides["required_labels"] = args.required_labels
     if args.dry_run:
         overrides["dry_run"] = True
     return overrides

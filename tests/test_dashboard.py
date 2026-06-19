@@ -32,6 +32,7 @@ def test_render_smoke():
     assert "Compute Engine" in output
     assert "Budgets" in output
     assert "Trend" in output
+    assert "Resource Audit" in output
 
 
 def test_bar_helper_scaling():

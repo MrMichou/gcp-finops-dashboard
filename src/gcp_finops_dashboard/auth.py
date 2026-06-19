@@ -72,3 +72,38 @@ def make_projects_client():
 
     credentials, _ = get_credentials()
     return resourcemanager_v3.ProjectsClient(credentials=credentials)
+
+
+def make_compute_instances_client():
+    from google.cloud import compute_v1
+
+    credentials, _ = get_credentials()
+    return compute_v1.InstancesClient(credentials=credentials)
+
+
+def make_compute_disks_client():
+    from google.cloud import compute_v1
+
+    credentials, _ = get_credentials()
+    return compute_v1.DisksClient(credentials=credentials)
+
+
+def make_compute_addresses_client():
+    from google.cloud import compute_v1
+
+    credentials, _ = get_credentials()
+    return compute_v1.AddressesClient(credentials=credentials)
+
+
+def make_storage_client(project: str | None = None):
+    from google.cloud import storage
+
+    credentials, default_project = get_credentials(quota_project=project)
+    return storage.Client(project=project or default_project, credentials=credentials)
+
+
+def make_functions_client():
+    from google.cloud import functions_v2
+
+    credentials, _ = get_credentials()
+    return functions_v2.FunctionServiceClient(credentials=credentials)

@@ -30,4 +30,15 @@ class CsvExporter(Exporter):
                 amount = "" if b.amount is None else f"{b.amount:.2f}"
                 spent = "" if b.spent is None else f"spent={b.spent:.2f}"
                 writer.writerow(["budget", b.name, "", amount, b.currency, spent])
+            for f in data.findings:
+                extra = f.detail
+                if f.estimated_monthly_cost is not None:
+                    extra = f"{f.detail} (est_cost={f.estimated_monthly_cost:.2f})"
+                # section/key/name/value/currency/extra -> reuse columns for findings:
+                # section=finding, key=resource_type, name=project/resource,
+                # value=issue, currency=location, extra=detail.
+                resource = f"{f.project_id}/{f.name}" if f.project_id else f.name
+                writer.writerow(
+                    ["finding", f.resource_type, resource, f.issue, f.location, extra]
+                )
         return out_path

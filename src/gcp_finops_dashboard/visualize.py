@@ -86,6 +86,41 @@ def _budget_table(data: DashboardData) -> Table:
     return table
 
 
+_ISSUE_COLOURS = {
+    "stopped": "yellow",
+    "unattached": "yellow",
+    "idle": "yellow",
+    "untagged": "cyan",
+    "no_lifecycle": "magenta",
+}
+
+
+def _findings_table(data: DashboardData) -> Table:
+    table = Table(title="Resource Audit", title_style="bold cyan")
+    table.add_column("Type")
+    table.add_column("Project")
+    table.add_column("Location")
+    table.add_column("Issue")
+    table.add_column("Detail")
+    table.add_column("Est. Cost", justify="right")
+    for finding in data.findings:
+        colour = _ISSUE_COLOURS.get(finding.issue, "white")
+        cost = (
+            _money(finding.estimated_monthly_cost, data.currency)
+            if finding.estimated_monthly_cost is not None
+            else "—"
+        )
+        table.add_row(
+            finding.resource_type,
+            finding.project_id,
+            finding.location or "—",
+            f"[{colour}]{finding.issue}[/{colour}]",
+            finding.detail,
+            cost,
+        )
+    return table
+
+
 def _trend_table(data: DashboardData) -> Table:
     max_cost = max((p.net_cost for p in data.trend), default=0.0)
     table = Table(title="6-Month Cost Trend", title_style="bold cyan")
@@ -112,5 +147,7 @@ def render(data: DashboardData, console: Console | None = None, show_trend: bool
         console.print(_project_table(data))
     if data.budgets:
         console.print(_budget_table(data))
+    if data.findings:
+        console.print(_findings_table(data))
     if show_trend and data.trend:
         console.print(_trend_table(data))

@@ -54,6 +54,8 @@ class Config:
     report_types: list[str] = field(default_factory=list)
     output_dir: str = DEFAULT_OUTPUT_DIR
     currency: str | None = None
+    audit: bool = False
+    required_labels: list[str] = field(default_factory=list)
     dry_run: bool = False
 
     @property
@@ -114,11 +116,11 @@ def _coerce(data: dict[str, Any]) -> dict[str, Any]:
     for key, value in data.items():
         if key not in allowed or value is None:
             continue
-        if key in ("projects", "report_types"):
+        if key in ("projects", "report_types", "required_labels"):
             out[key] = list(value) if not isinstance(value, str) else [value]
         elif key == "time_range_days":
             out[key] = int(value)
-        elif key in ("trend", "dry_run"):
+        elif key in ("trend", "dry_run", "audit"):
             out[key] = bool(value)
         else:
             out[key] = value

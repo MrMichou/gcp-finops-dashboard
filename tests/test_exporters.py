@@ -27,9 +27,11 @@ def test_csv_round_trip(tmp_path):
     with paths[0].open(encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh))
     sections = {r["section"] for r in rows}
-    assert {"service_cost", "project_cost", "trend", "budget"} <= sections
+    assert {"service_cost", "project_cost", "trend", "budget", "finding"} <= sections
     compute = next(r for r in rows if r["section"] == "service_cost" and r["key"] == "Compute Engine")
     assert compute["value"] == "4231.55"
+    finding = next(r for r in rows if r["section"] == "finding")
+    assert finding["value"] in {"stopped", "unattached", "idle", "untagged", "no_lifecycle"}
 
 
 def test_json_round_trip(tmp_path):
@@ -39,6 +41,8 @@ def test_json_round_trip(tmp_path):
     assert payload["metadata"]["bq_table"] == data.bq_table
     assert len(payload["service_costs"]) == len(data.service_costs)
     assert payload["budgets"][0]["name"] == "Monthly Org Budget"
+    assert len(payload["findings"]) == len(data.findings)
+    assert payload["findings"][0]["issue"] == data.findings[0].issue
 
 
 def test_export_all_creates_dir_and_multiple_files(tmp_path):

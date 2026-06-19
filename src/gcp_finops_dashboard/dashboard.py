@@ -8,7 +8,7 @@ module imports cleanly without credentials.
 from __future__ import annotations
 
 from gcp_finops_dashboard.config import Config, ConfigError
-from gcp_finops_dashboard.models import DashboardData
+from gcp_finops_dashboard.models import DashboardData, ResourceFinding
 
 
 def build_dashboard(config: Config) -> DashboardData:
@@ -61,4 +61,29 @@ def build_dashboard(config: Config) -> DashboardData:
         budget_source = BudgetSource(auth.make_budgets_client(), config.billing_account_id)
         data.budgets = budget_source.get_budgets()
 
+    if config.audit:
+        data.findings = _run_audit(config, project_scope)
+
     return data
+
+
+def _run_audit(config: Config, project_scope: list[str]) -> list[ResourceFinding]:
+    """Build audit clients and run the resource audit over ``project_scope``.
+
+    The audit needs concrete project IDs; without a scope there is nothing to
+    enumerate, so it returns no findings rather than guessing.
+    """
+    if not project_scope:
+        return []
+
+    from gcp_finops_dashboard import auth
+    from gcp_finops_dashboard.audit import AuditClients, run_audit
+
+    clients = AuditClients(
+        instances=auth.make_compute_instances_client(),
+        disks=auth.make_compute_disks_client(),
+        addresses=auth.make_compute_addresses_client(),
+        storage=auth.make_storage_client(config.effective_billing_project),
+        functions=auth.make_functions_client(),
+    )
+    return run_audit(clients, project_scope, config.required_labels)

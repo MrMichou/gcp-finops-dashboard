@@ -23,6 +23,9 @@ dependencies = [
     "google-cloud-billing-budgets>=1.14",
     "google-cloud-billing>=1.20",
     "google-cloud-resource-manager>=1.14",
+    "google-cloud-compute>=1.19",
+    "google-cloud-storage>=2.18",
+    "google-cloud-functions>=1.16",
     "google-auth>=2.30",
 ]
 
