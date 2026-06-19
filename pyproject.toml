@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gcp-finops-dashboard"
+version = "0.1.0"
+description = "A terminal-based GCP FinOps dashboard: cost breakdowns, trends and budgets across projects."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "gcp-finops-dashboard contributors" }]
+keywords = ["gcp", "finops", "cost", "billing", "bigquery", "dashboard", "cli"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "rich>=13",
+    "google-cloud-bigquery>=3.25",
+    "google-cloud-billing-budgets>=1.14",
+    "google-cloud-billing>=1.20",
+    "google-cloud-resource-manager>=1.14",
+    "google-auth>=2.30",
+]
+
+[project.optional-dependencies]
+yaml = ["PyYAML>=6"]
+dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "PyYAML>=6"]
+
+[project.urls]
+Homepage = "https://github.com/mrmichou/gcp-finops-dashboard"
+Repository = "https://github.com/mrmichou/gcp-finops-dashboard"
+
+[project.scripts]
+gcp-finops = "gcp_finops_dashboard.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gcp_finops_dashboard"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
