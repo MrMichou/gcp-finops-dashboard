@@ -96,7 +96,9 @@ def make_compute_addresses_client():
 
 
 def make_storage_client(project: str | None = None):
-    from google.cloud import storage
+    # google.cloud is a PEP 420 namespace package; mypy flags this typed
+    # submodule as attr-defined, so ignore that specific error here.
+    from google.cloud import storage  # type: ignore[attr-defined]
 
     credentials, default_project = get_credentials(quota_project=project)
     return storage.Client(project=project or default_project, credentials=credentials)
