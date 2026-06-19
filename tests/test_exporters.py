@@ -12,12 +12,22 @@ from gcp_finops_dashboard.sample_data import sample_dashboard
 
 
 def test_available_formats():
-    assert set(available_formats()) == {"csv", "json"}
+    assert set(available_formats()) == {"csv", "json", "pdf"}
 
 
 def test_unknown_format_raises():
     with pytest.raises(ValueError):
-        get_exporter("pdf")
+        get_exporter("xlsx")
+
+
+def test_pdf_round_trip(tmp_path):
+    pytest.importorskip("reportlab")
+    paths = export_all(sample_dashboard(), ["pdf"], str(tmp_path), "report")
+    assert len(paths) == 1
+    assert paths[0].suffix == ".pdf"
+    content = paths[0].read_bytes()
+    assert content.startswith(b"%PDF")
+    assert len(content) > 1000
 
 
 def test_csv_round_trip(tmp_path):

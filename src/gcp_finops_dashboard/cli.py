@@ -62,9 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report-type",
         nargs="+",
-        choices=["csv", "json"],
+        choices=["csv", "json", "pdf"],
         metavar="FORMAT",
-        help="One or more export formats: csv json.",
+        help="One or more export formats: csv json pdf.",
     )
     parser.add_argument(
         "--dir",

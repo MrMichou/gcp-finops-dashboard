@@ -31,7 +31,8 @@ dependencies = [
 
 [project.optional-dependencies]
 yaml = ["PyYAML>=6"]
-dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "PyYAML>=6"]
+pdf = ["reportlab>=4"]
+dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "PyYAML>=6", "reportlab>=4"]
 
 [project.urls]
 Homepage = "https://github.com/mrmichou/gcp-finops-dashboard"
