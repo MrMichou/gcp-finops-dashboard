@@ -1,0 +1,29 @@
+# Example configuration for gcp-finops-dashboard.
+# Copy to `gcp-finops.toml` (auto-detected) or pass with --config-file.
+# CLI flags override these values; environment variables are the lowest precedence.
+
+# Billing account ID, e.g. 01ABCD-23EFGH-456789. Used for budgets and to list
+# all projects on the account when --projects is not given.
+billing_account_id = "01ABCD-23EFGH-456789"
+
+# Fully-qualified BigQuery Cloud Billing export table (project.dataset.table).
+bq_table = "my-proj.billing_export.gcp_billing_export_v1_01ABCD_23EFGH_456789"
+
+# Project that runs and is billed for the BigQuery queries.
+# Defaults to the table's project when omitted.
+billing_project = "my-proj"
+
+# Optional: restrict the analysis to specific project IDs.
+# Omit (or leave empty) to analyse every project on the billing account.
+# projects = ["prod-app", "data-platform"]
+
+# Lookback window in days for the service/project cost tables.
+time_range_days = 30
+
+# Show the 6-month cost trend chart.
+trend = true
+
+# Export formats and destination.
+report_types = ["csv", "json"]
+report_name = "gcp-finops"
+output_dir = "./reports"
