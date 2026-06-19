@@ -27,6 +27,7 @@ class JsonExporter(Exporter):
             "project_costs": [asdict(p) for p in data.project_costs],
             "trend": [asdict(t) for t in data.trend],
             "budgets": [asdict(b) for b in data.budgets],
+            "findings": [asdict(f) for f in data.findings],
         }
         out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return out_path

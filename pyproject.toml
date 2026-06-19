@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gcp-finops-dashboard"
-version = "0.1.0"
+version = "0.2.0"
 description = "A terminal-based GCP FinOps dashboard: cost breakdowns, trends and budgets across projects."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -23,12 +23,16 @@ dependencies = [
     "google-cloud-billing-budgets>=1.14",
     "google-cloud-billing>=1.20",
     "google-cloud-resource-manager>=1.14",
+    "google-cloud-compute>=1.19",
+    "google-cloud-storage>=2.18",
+    "google-cloud-functions>=1.16",
     "google-auth>=2.30",
 ]
 
 [project.optional-dependencies]
 yaml = ["PyYAML>=6"]
-dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "PyYAML>=6"]
+pdf = ["reportlab>=4"]
+dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "PyYAML>=6", "reportlab>=4"]
 
 [project.urls]
 Homepage = "https://github.com/mrmichou/gcp-finops-dashboard"

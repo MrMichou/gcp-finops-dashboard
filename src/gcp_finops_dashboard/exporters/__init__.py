@@ -11,11 +11,13 @@ from pathlib import Path
 from gcp_finops_dashboard.exporters.base import Exporter
 from gcp_finops_dashboard.exporters.csv_exporter import CsvExporter
 from gcp_finops_dashboard.exporters.json_exporter import JsonExporter
+from gcp_finops_dashboard.exporters.pdf_exporter import PdfExporter
 from gcp_finops_dashboard.models import DashboardData
 
 _EXPORTERS: dict[str, type[Exporter]] = {
     "csv": CsvExporter,
     "json": JsonExporter,
+    "pdf": PdfExporter,
 }
 
 
