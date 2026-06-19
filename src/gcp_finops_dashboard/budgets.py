@@ -32,7 +32,7 @@ def _amount_and_currency(budget: Any) -> tuple[float | None, str]:
         return None, _DEFAULT_CURRENCY
 
     specified = getattr(amount_field, "specified_amount", None)
-    if specified is not None and getattr(specified, "currency_code", ""):
+    if specified is not None and getattr(specified, "currency_code", None):
         units = getattr(specified, "units", 0) or 0
         nanos = getattr(specified, "nanos", 0) or 0
         value = float(units) + float(nanos) / 1e9
