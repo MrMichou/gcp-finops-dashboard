@@ -4,8 +4,8 @@ description: Scheduled GCP FinOps dashboard — runs as a Kubernetes CronJob and
 type: application
 # Chart version — bump on chart changes.
 version: 0.1.0
-# Default app version — overridable via image.tag.
-appVersion: "0.2.0"
+# Default app version — tracks the released app version (managed by release-please).
+appVersion: "0.2.2" # x-release-please-version
 keywords:
   - gcp
   - finops
