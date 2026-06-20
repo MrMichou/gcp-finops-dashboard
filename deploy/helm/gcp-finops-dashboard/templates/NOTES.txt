@@ -1,0 +1,23 @@
+gcp-finops-dashboard installed as a CronJob.
+
+  Schedule : {{ .Values.schedule }}{{ if .Values.timeZone }} ({{ .Values.timeZone }}){{ end }}
+  Image    : {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+  Slack    : {{ if include "gcp-finops-dashboard.slackEnabled" . }}enabled{{ else }}disabled{{ end }}
+
+Trigger a one-off run now (without waiting for the schedule):
+
+  kubectl create job --from=cronjob/{{ include "gcp-finops-dashboard.fullname" . }} \
+    {{ include "gcp-finops-dashboard.fullname" . }}-manual -n {{ .Release.Namespace }}
+
+Follow the logs:
+
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
+
+{{- if .Values.serviceAccount.create }}
+{{- if not (index .Values.serviceAccount.annotations "iam.gke.io/gcp-service-account") }}
+
+WARNING: serviceAccount has no 'iam.gke.io/gcp-service-account' annotation and no
+key file is mounted. On GKE, set serviceAccount.annotations to the GSA email from
+the Terraform output (service_account_email) so Workload Identity can authenticate.
+{{- end }}
+{{- end }}

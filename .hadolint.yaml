@@ -1,0 +1,5 @@
+# DL3013: "pin versions in pip". We install the `build` frontend and our own
+# freshly-built wheel (with extras) — pinning those adds no reproducibility,
+# so this rule is intentionally ignored.
+ignored:
+  - DL3013

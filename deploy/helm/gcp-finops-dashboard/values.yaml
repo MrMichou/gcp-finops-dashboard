@@ -1,0 +1,110 @@
+# Default values for gcp-finops-dashboard.
+
+image:
+  repository: ghcr.io/mrmichou/gcp-finops-dashboard
+  # Defaults to .Chart.AppVersion when empty.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# --- Schedule ---------------------------------------------------------------
+# Cron expression for the run (cluster timezone unless `timeZone` is set).
+schedule: "0 8 * * 1"          # every Monday 08:00
+timeZone: ""                    # e.g. "Europe/Paris" (Kubernetes >= 1.27)
+concurrencyPolicy: Forbid
+startingDeadlineSeconds: 300
+successfulJobsHistoryLimit: 3
+failedJobsHistoryLimit: 3
+suspend: false
+
+# Job-level retry / cleanup.
+backoffLimit: 1
+activeDeadlineSeconds: 900
+ttlSecondsAfterFinished: 86400
+
+# --- Application configuration ----------------------------------------------
+# Rendered into a ConfigMap as gcp-finops.toml and passed via --config-file.
+# Mirrors gcp-finops.example.toml; omit keys you don't need.
+config:
+  billing_account_id: ""       # e.g. "01ABCD-23EFGH-456789"
+  bq_table: ""                 # e.g. "my-proj.billing_export.gcp_billing_export_v1_xxx"
+  billing_project: ""          # defaults to the table's project when empty
+  projects: []                 # [] = all projects on the billing account
+  time_range_days: 30
+  trend: true
+  audit: false
+  required_labels: []          # e.g. ["team", "env"]
+  # Reports are written to /reports inside the container (see persistence below).
+  report_types: []             # e.g. ["csv", "json"]
+  report_name: "gcp-finops"
+  output_dir: "/reports"
+
+# Extra CLI flags appended to the invocation (rarely needed; config covers most).
+extraArgs: []
+
+# --- Slack ------------------------------------------------------------------
+# Provide the webhook as a value (stored in a chart-managed Secret) OR point at
+# an existing Secret. Leave both empty to disable Slack notifications.
+slack:
+  webhook: ""                  # https://hooks.slack.com/services/...
+  existingSecret: ""           # name of a Secret holding the webhook
+  existingSecretKey: "webhook" # key within that Secret
+
+# --- GCP authentication -----------------------------------------------------
+# Recommended: Workload Identity (no key files). Annotate the ServiceAccount
+# with the GSA email created by the Terraform module and leave key file empty.
+serviceAccount:
+  create: true
+  name: "gcp-finops-dashboard"
+  annotations: {}
+  # iam.gke.io/gcp-service-account: gcp-finops-dashboard@my-proj.iam.gserviceaccount.com
+
+# Alternative: mount a service-account key from an existing Secret and expose it
+# via GOOGLE_APPLICATION_CREDENTIALS. Prefer Workload Identity over this.
+gcpServiceAccountKey:
+  existingSecret: ""           # Secret containing a key.json
+  key: "key.json"
+
+# --- Optional report persistence --------------------------------------------
+# Mount a PVC at config.output_dir to keep CSV/JSON/PDF reports between runs.
+persistence:
+  enabled: false
+  existingClaim: ""
+  accessModes: ["ReadWriteOnce"]
+  size: 1Gi
+  storageClass: ""
+
+# --- Pod settings -----------------------------------------------------------
+env: []                        # extra env vars: [{name: FOO, value: bar}]
+envFrom: []                    # extra envFrom sources
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gcp-finops-dashboard.fullname" . }}
+  labels:
+    {{- include "gcp-finops-dashboard.labels" . | nindent 4 }}
+data:
+  gcp-finops.toml: |
+    # Managed by Helm — do not edit in-cluster.
+    {{- $c := .Values.config }}
+    {{- if $c.billing_account_id }}
+    billing_account_id = {{ $c.billing_account_id | quote }}
+    {{- end }}
+    {{- if $c.bq_table }}
+    bq_table = {{ $c.bq_table | quote }}
+    {{- end }}
+    {{- if $c.billing_project }}
+    billing_project = {{ $c.billing_project | quote }}
+    {{- end }}
+    {{- if $c.projects }}
+    projects = [{{ range $i, $p := $c.projects }}{{ if $i }}, {{ end }}{{ $p | quote }}{{ end }}]
+    {{- end }}
+    {{- if not (kindIs "invalid" $c.time_range_days) }}
+    time_range_days = {{ $c.time_range_days | int }}
+    {{- end }}
+    trend = {{ $c.trend | default false }}
+    audit = {{ $c.audit | default false }}
+    {{- if $c.required_labels }}
+    required_labels = [{{ range $i, $l := $c.required_labels }}{{ if $i }}, {{ end }}{{ $l | quote }}{{ end }}]
+    {{- end }}
+    {{- if $c.report_types }}
+    report_types = [{{ range $i, $r := $c.report_types }}{{ if $i }}, {{ end }}{{ $r | quote }}{{ end }}]
+    {{- end }}
+    {{- if $c.report_name }}
+    report_name = {{ $c.report_name | quote }}
+    {{- end }}
+    {{- if $c.output_dir }}
+    output_dir = {{ $c.output_dir | quote }}
+    {{- end }}

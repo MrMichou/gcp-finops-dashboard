@@ -163,6 +163,86 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
 merging it tags the release, publishes the GitHub Release and pushes to PyPI.
 See [RELEASING.md](RELEASING.md) for details.
 
+## Deployment
+
+The tool ships as a CLI, a container image, and a Helm chart so you can run it
+ad-hoc, in CI, or as a scheduled job on Kubernetes.
+
+### Container image (GHCR)
+
+A multi-stage `Dockerfile` builds a slim, non-root image. Images are published
+to GitHub Container Registry whenever a release is published (via the
+release-please flow — see [Releasing](#releasing)) by
+[`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml)
+(multi-arch `amd64`/`arm64`, with SBOM and build provenance).
+
+```bash
+# Build locally
+docker build -t gcp-finops-dashboard .
+
+# Try it with sample data (default CMD is --dry-run --trend)
+docker run --rm ghcr.io/mrmichou/gcp-finops-dashboard:latest
+
+# Real run with mounted ADC credentials
+docker run --rm \
+  -v "$HOME/.config/gcloud:/home/finops/.config/gcloud:ro" \
+  ghcr.io/mrmichou/gcp-finops-dashboard:latest \
+  --bq-table my-proj.billing_export.gcp_billing_export_v1_xxx \
+  --billing-account 01ABCD-23EFGH-456789 --trend
+```
+
+### PyPI
+
+PyPI publishing is handled by the release-please flow (see [Releasing](#releasing)
+and [RELEASING.md](RELEASING.md)): publishing a GitHub Release builds the
+sdist + wheel and pushes to PyPI via **Trusted Publishing** (OIDC — no stored
+token). Once `pip install gcp-finops-dashboard` is available, the container
+image and Helm chart below pull the same released version.
+
+### GCP IAM (Terraform)
+
+[`deploy/terraform/`](deploy/terraform) provisions the read-only service account
+the dashboard runs as, with least-privilege roles:
+
+- BigQuery Data Viewer + Job User on the billing-export project (cost & trend),
+- Billing Viewer on the billing account (budgets),
+- Viewer on each audited project (`--audit`),
+- and an optional **Workload Identity** binding so a GKE pod authenticates
+  without any key file.
+
+```bash
+cd deploy/terraform
+cp terraform.tfvars.example terraform.tfvars   # then edit
+terraform init && terraform apply
+terraform output service_account_email          # feed this to the Helm values
+```
+
+### Kubernetes (Helm)
+
+[`deploy/helm/gcp-finops-dashboard`](deploy/helm/gcp-finops-dashboard) deploys a
+**CronJob** that runs the dashboard on a schedule and posts the summary to
+Slack. App config is rendered into a ConfigMap (`gcp-finops.toml`), the Slack
+webhook lives in a Secret, and GCP auth uses Workload Identity by default
+(no JSON key).
+
+```bash
+helm install finops deploy/helm/gcp-finops-dashboard \
+  --namespace finops --create-namespace \
+  --set image.tag=0.2.0 \
+  --set schedule="0 8 * * 1" \
+  --set config.billing_account_id=01ABCD-23EFGH-456789 \
+  --set config.bq_table=my-proj.billing_export.gcp_billing_export_v1_xxx \
+  --set config.trend=true \
+  --set slack.webhook=https://hooks.slack.com/services/T00/B00/XXXX \
+  --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"=$(cd deploy/terraform && terraform output -raw service_account_email)
+```
+
+The Terraform `workload_identity` block must match the chart's `serviceAccount.name`
+and release namespace. Trigger an off-schedule run with
+`kubectl create job --from=cronjob/finops-gcp-finops-dashboard finops-manual -n finops`.
+See [`values.yaml`](deploy/helm/gcp-finops-dashboard/values.yaml) for all knobs
+(report persistence via PVC, resources, key-file auth as an alternative to WI, etc.).
+
 ## Roadmap
 
 Growing toward parity with the AWS tool. Delivered in v0.2:
