@@ -5,9 +5,19 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege: CI only needs to read the repo.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -33,6 +43,10 @@ jobs:
   docker:
     name: Docker build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write   # upload Trivy SARIF to code scanning
     steps:
       - uses: actions/checkout@v7
       - name: Lint Dockerfile
@@ -53,9 +67,28 @@ jobs:
       - name: Smoke-test the image
         run: docker run --rm gcp-finops-dashboard:ci --version
 
+      # Scan the built image and surface findings under Security > Code scanning.
+      # Informational (does not fail the build); flip exit-code to 1 to gate.
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: gcp-finops-dashboard:ci
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 0
+      - name: Upload Trivy results to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-image
+
   helm:
     name: Helm lint & template
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: azure/setup-helm@v4
@@ -72,6 +105,7 @@ jobs:
   terraform:
     name: Terraform validate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: hashicorp/setup-terraform@v3
