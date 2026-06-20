@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from gcp_finops_dashboard import cli
+from gcp_finops_dashboard import __version__, cli
 
 
 # --- _cli_overrides ---------------------------------------------------------
@@ -132,4 +132,4 @@ def test_main_version_exits_zero(capsys):
     with pytest.raises(SystemExit) as exc:
         cli.main(["--version"])
     assert exc.value.code == 0
-    assert "0.2.0" in capsys.readouterr().out
+    assert __version__ in capsys.readouterr().out
