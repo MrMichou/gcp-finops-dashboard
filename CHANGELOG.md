@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/MrMichou/gcp-finops-dashboard/compare/v0.2.2...v0.2.3) (2026-06-20)
+
+
+### Bug Fixes
+
+* portable checksum in release-binaries (sha256sum/shasum) ([#17](https://github.com/MrMichou/gcp-finops-dashboard/issues/17)) ([e016388](https://github.com/MrMichou/gcp-finops-dashboard/commit/e01638870bbebc0432fb29e171657df8d29d9f80))
+
 ## [0.2.2](https://github.com/MrMichou/gcp-finops-dashboard/compare/v0.2.1...v0.2.2) (2026-06-20)
 
 
