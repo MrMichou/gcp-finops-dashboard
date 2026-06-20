@@ -1,0 +1,26 @@
+name: Release Please
+
+# Maintains a "release PR" on main that bumps the version and updates the
+# CHANGELOG from Conventional Commits. Merging that PR creates the git tag
+# and the GitHub Release, which in turn triggers the Release workflow.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

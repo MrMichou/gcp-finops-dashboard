@@ -155,6 +155,14 @@ The codebase keeps all GCP I/O in `auth.py`, `projects.py`, `bigquery_client.py`
 and `budgets.py`; the rest (config, SQL builders, rendering, exporters) is pure
 and unit-tested without credentials.
 
+### Releasing
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please).
+Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
+`fix:`, …) and merge to `main`; a release PR is opened automatically, and
+merging it tags the release, publishes the GitHub Release and pushes to PyPI.
+See [RELEASING.md](RELEASING.md) for details.
+
 ## Roadmap
 
 Growing toward parity with the AWS tool. Delivered in v0.2:
