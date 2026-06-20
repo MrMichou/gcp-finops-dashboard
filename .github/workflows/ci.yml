@@ -85,6 +85,38 @@ jobs:
           sarif_file: trivy-results.sarif
           category: trivy-image
 
+  # Smoke-test the PyInstaller bundle so a missing hidden-import/--collect-all for
+  # a newly added dependency is caught here on the PR, not later at release time.
+  # Linux-only is enough to catch import regressions cheaply; the full OS matrix
+  # stays release-only (release-binaries.yml). No asset upload.
+  binary:
+    name: Binary build (PyInstaller)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package + PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install . pyinstaller
+      - name: Build single-file binary
+        run: |
+          pyinstaller --onefile --name gcp-finops \
+            --collect-all google \
+            --collect-all grpc \
+            --collect-all proto \
+            --collect-all google_crc32c \
+            packaging/pyinstaller_entry.py
+        shell: bash
+      - name: Smoke-test the binary (--version)
+        run: ./dist/gcp-finops --version
+      - name: Smoke-test the binary (--dry-run)
+        run: ./dist/gcp-finops --dry-run
+
   helm:
     name: Helm lint & template
     runs-on: ubuntu-latest
