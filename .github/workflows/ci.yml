@@ -44,6 +44,9 @@ jobs:
     name: Docker build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write   # upload Trivy SARIF to code scanning
     steps:
       - uses: actions/checkout@v7
       - name: Lint Dockerfile
@@ -63,6 +66,24 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Smoke-test the image
         run: docker run --rm gcp-finops-dashboard:ci --version
+
+      # Scan the built image and surface findings under Security > Code scanning.
+      # Informational (does not fail the build); flip exit-code to 1 to gate.
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: gcp-finops-dashboard:ci
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 0
+      - name: Upload Trivy results to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-image
 
   helm:
     name: Helm lint & template
