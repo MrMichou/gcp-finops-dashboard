@@ -70,7 +70,7 @@ jobs:
       # Scan the built image and surface findings under Security > Code scanning.
       # Informational (does not fail the build); flip exit-code to 1 to gate.
       - name: Scan image for vulnerabilities (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: gcp-finops-dashboard:ci
           format: sarif
