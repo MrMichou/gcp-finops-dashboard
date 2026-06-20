@@ -27,4 +27,4 @@ jobs:
       - name: Mypy
         run: mypy src
       - name: Pytest
-        run: pytest
+        run: pytest --cov=gcp_finops_dashboard --cov-report=term-missing --cov-fail-under=85
