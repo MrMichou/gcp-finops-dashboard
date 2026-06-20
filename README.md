@@ -160,13 +160,32 @@ and unit-tested without credentials.
 Releases are automated with [release-please](https://github.com/googleapis/release-please).
 Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
 `fix:`, …) and merge to `main`; a release PR is opened automatically, and
-merging it tags the release, publishes the GitHub Release and pushes to PyPI.
-See [RELEASING.md](RELEASING.md) for details.
+merging it tags the release and publishes the GitHub Release, which carries the
+standalone binaries and the GHCR image. See [RELEASING.md](RELEASING.md) for details.
 
 ## Deployment
 
-The tool ships as a CLI, a container image, and a Helm chart so you can run it
-ad-hoc, in CI, or as a scheduled job on Kubernetes.
+The tool ships as standalone binaries, a container image, and a Helm chart so
+you can run it ad-hoc, in CI, or as a scheduled job on Kubernetes.
+
+### Standalone binary
+
+Each GitHub Release attaches single-file executables (no Python or pip needed)
+for Linux, macOS (x86_64 and arm64) and Windows, built with PyInstaller by
+[`.github/workflows/release-binaries.yml`](.github/workflows/release-binaries.yml).
+Each binary ships with a `.sha256` checksum.
+
+```bash
+# Download (Linux x86_64 shown) from the latest release, verify, run
+curl -fsSLO https://github.com/mrmichou/gcp-finops-dashboard/releases/latest/download/gcp-finops-linux-x86_64
+curl -fsSLO https://github.com/mrmichou/gcp-finops-dashboard/releases/latest/download/gcp-finops-linux-x86_64.sha256
+shasum -a 256 -c gcp-finops-linux-x86_64.sha256
+chmod +x gcp-finops-linux-x86_64
+./gcp-finops-linux-x86_64 --dry-run --trend
+```
+
+> On macOS, Gatekeeper may quarantine an unsigned binary; clear it with
+> `xattr -d com.apple.quarantine gcp-finops-macos-*`.
 
 ### Container image (GHCR)
 
@@ -190,14 +209,6 @@ docker run --rm \
   --bq-table my-proj.billing_export.gcp_billing_export_v1_xxx \
   --billing-account 01ABCD-23EFGH-456789 --trend
 ```
-
-### PyPI
-
-PyPI publishing is handled by the release-please flow (see [Releasing](#releasing)
-and [RELEASING.md](RELEASING.md)): publishing a GitHub Release builds the
-sdist + wheel and pushes to PyPI via **Trusted Publishing** (OIDC — no stored
-token). Once `pip install gcp-finops-dashboard` is available, the container
-image and Helm chart below pull the same released version.
 
 ### GCP IAM (Terraform)
 
