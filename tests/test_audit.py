@@ -96,6 +96,50 @@ def test_function_missing_label_flagged():
     assert findings[0].name == "fn-1"
 
 
+# --- Cloud SQL instances ----------------------------------------------------
+
+
+def test_sql_instance_never_policy_flagged_stopped():
+    inst = {
+        "name": "db-1",
+        "region": "us-central1",
+        "state": "RUNNABLE",
+        "settings": {"activationPolicy": "NEVER", "userLabels": {"team": "x"}},
+    }
+    findings = audit.check_sql_instance(inst, "proj", required_labels=["team"])
+    assert [f.issue for f in findings] == ["stopped"]
+    assert findings[0].resource_type == "cloud_sql_instance"
+    assert findings[0].location == "us-central1"
+
+
+def test_sql_instance_stopped_state_flagged():
+    inst = {"name": "db-2", "region": "europe-west1", "state": "STOPPED", "settings": {}}
+    findings = audit.check_sql_instance(inst, "proj", required_labels=[])
+    assert [f.issue for f in findings] == ["stopped"]
+
+
+def test_running_sql_instance_with_labels_clean():
+    inst = {
+        "name": "db-3",
+        "region": "us-central1",
+        "state": "RUNNABLE",
+        "settings": {"activationPolicy": "ALWAYS", "userLabels": {"team": "x"}},
+    }
+    assert audit.check_sql_instance(inst, "proj", required_labels=["team"]) == []
+
+
+def test_sql_instance_missing_label_flagged_untagged():
+    inst = {
+        "name": "db-4",
+        "region": "us-central1",
+        "state": "RUNNABLE",
+        "settings": {"activationPolicy": "ALWAYS", "userLabels": {"env": "prod"}},
+    }
+    findings = audit.check_sql_instance(inst, "proj", required_labels=["team", "env"])
+    assert [f.issue for f in findings] == ["untagged"]
+    assert "team" in findings[0].detail
+
+
 # --- Orchestration ----------------------------------------------------------
 
 
@@ -108,12 +152,39 @@ class _FakeStorage:
         return list(self._buckets)
 
 
+class _FakeSqlList:
+    def __init__(self, items):
+        self._items = items
+
+    def list(self, project):
+        assert project == "proj"
+        return self
+
+    def execute(self):
+        return {"items": list(self._items)}
+
+
+class _FakeSql:
+    def __init__(self, items):
+        self._items = items
+
+    def instances(self):
+        return _FakeSqlList(self._items)
+
+
 def test_run_audit_collects_across_clients():
     storage = _FakeStorage([ns(name="b", location="US", lifecycle_rules=[], labels={})])
     clients = AuditClients(storage=storage)
     findings = run_audit(clients, ["proj"], required_labels=[])
     assert len(findings) == 1
     assert findings[0].resource_type == "gcs_bucket"
+
+
+def test_run_audit_includes_cloud_sql():
+    sql = _FakeSql([{"name": "db", "region": "us-central1", "state": "STOPPED", "settings": {}}])
+    findings = run_audit(AuditClients(sql=sql), ["proj"], required_labels=[])
+    assert [f.resource_type for f in findings] == ["cloud_sql_instance"]
+    assert findings[0].issue == "stopped"
 
 
 def test_run_audit_no_clients_returns_empty():

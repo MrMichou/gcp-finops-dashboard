@@ -85,5 +85,6 @@ def _run_audit(config: Config, project_scope: list[str]) -> list[ResourceFinding
         addresses=auth.make_compute_addresses_client(),
         storage=auth.make_storage_client(config.effective_billing_project),
         functions=auth.make_functions_client(),
+        sql=auth.make_sql_client(),
     )
     return run_audit(clients, project_scope, config.required_labels)

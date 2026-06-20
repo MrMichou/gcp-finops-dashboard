@@ -162,6 +162,52 @@ def check_bucket(bucket: Any, project_id: str, required_labels: list[str]) -> li
     return findings
 
 
+def check_sql_instance(instance: Any, project_id: str, required_labels: list[str]) -> list[ResourceFinding]:
+    """Flag a stopped Cloud SQL instance or one missing required labels.
+
+    Cloud SQL is audited through the discovery-based Cloud SQL Admin API, whose
+    ``instances().list`` returns plain dicts (unlike the proto objects the
+    Compute/Functions GAPIC clients return), so this rule reads dict fields
+    directly rather than via ``getattr``.
+    """
+    findings: list[ResourceFinding] = []
+    name = instance.get("name", "")
+    region = instance.get("region", "") or ""
+    state = instance.get("state", "") or ""
+    settings = instance.get("settings") or {}
+    activation_policy = settings.get("activationPolicy", "") or ""
+
+    # A stopped instance still bills for its provisioned storage (and any HA
+    # standby). Stopping sets state to STOPPED on newer instances; older ones are
+    # stopped by setting the activation policy to NEVER.
+    if state == "STOPPED" or activation_policy == "NEVER":
+        findings.append(
+            ResourceFinding(
+                resource_type="cloud_sql_instance",
+                name=name,
+                project_id=project_id,
+                location=region,
+                issue="stopped",
+                detail="Cloud SQL instance is stopped but still bills for provisioned storage.",
+            )
+        )
+
+    present = settings.get("userLabels") or {}
+    missing = [key for key in required_labels if not present.get(key)]
+    if missing:
+        findings.append(
+            ResourceFinding(
+                resource_type="cloud_sql_instance",
+                name=name,
+                project_id=project_id,
+                location=region,
+                issue="untagged",
+                detail=f"Missing required label(s): {', '.join(missing)}.",
+            )
+        )
+    return findings
+
+
 def check_function(function: Any, project_id: str, required_labels: list[str]) -> list[ResourceFinding]:
     """Flag a Cloud Function missing required labels."""
     name = _short(getattr(function, "name", ""))
@@ -194,12 +240,14 @@ class AuditClients:
         addresses: Any = None,
         storage: Any = None,
         functions: Any = None,
+        sql: Any = None,
     ) -> None:
         self.instances = instances
         self.disks = disks
         self.addresses = addresses
         self.storage = storage
         self.functions = functions
+        self.sql = sql
 
 
 def run_audit(
@@ -231,6 +279,9 @@ def run_audit(
         if clients.functions is not None:
             for fn in _safe_list(lambda: _list_functions(clients.functions, project_id)):
                 findings.extend(check_function(fn, project_id, required))
+        if clients.sql is not None:
+            for sql_inst in _safe_list(lambda: _list_sql_instances(clients.sql, project_id)):
+                findings.extend(check_sql_instance(sql_inst, project_id, required))
 
     return findings
 
@@ -283,3 +334,9 @@ def _list_functions(client: Any, project_id: str) -> Iterable[Any]:
     parent = f"projects/{project_id}/locations/-"
     request = functions_v2.ListFunctionsRequest(parent=parent)
     return client.list_functions(request=request)
+
+
+def _list_sql_instances(client: Any, project_id: str) -> Iterable[Any]:
+    """List Cloud SQL instances via the discovery-based Cloud SQL Admin API."""
+    response = client.instances().list(project=project_id).execute()
+    return response.get("items", []) or []
