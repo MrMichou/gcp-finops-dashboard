@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars and fill in. Then: terraform init && terraform apply
+
+project_id         = "my-billing-proj"
+billing_account_id = "01ABCD-23EFGH-456789"
+
+# Project holding the BigQuery billing-export dataset (defaults to project_id).
+# billing_export_project_id = "my-billing-proj"
+
+# Projects the --audit run inspects (omit if you don't use --audit).
+# audited_project_ids = ["prod-app", "data-platform"]
+
+# Bind a GKE Kubernetes ServiceAccount to this GSA (must match the Helm values).
+workload_identity = {
+  enabled            = true
+  namespace          = "finops"
+  kubernetes_sa_name = "gcp-finops-dashboard"
+}

@@ -1,0 +1,39 @@
+# Keep the build context small and the image clean.
+.git
+.github
+.serena
+.claude
+.venv
+venv
+env
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+tests/
+deploy/
+reports/
+
+# Never ship credentials
+*.json.key
+service-account*.json
+application_default_credentials.json
+
+# Docs / editor cruft not needed at runtime
+*.md
+!README.md
+.idea/
+.vscode/
+.DS_Store

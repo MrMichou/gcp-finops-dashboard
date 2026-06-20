@@ -1,0 +1,123 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "gcp-finops-dashboard.fullname" . }}
+  labels:
+    {{- include "gcp-finops-dashboard.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  {{- with .Values.timeZone }}
+  timeZone: {{ . | quote }}
+  {{- end }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  suspend: {{ .Values.suspend }}
+  startingDeadlineSeconds: {{ .Values.startingDeadlineSeconds }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .Values.ttlSecondsAfterFinished }}
+      template:
+        metadata:
+          labels:
+            {{- include "gcp-finops-dashboard.selectorLabels" . | nindent 12 }}
+            {{- with .Values.podLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "gcp-finops-dashboard.serviceAccountName" . }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: gcp-finops
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              {{- with .Values.securityContext }}
+              securityContext:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              args:
+                - "--config-file"
+                - "/etc/gcp-finops/gcp-finops.toml"
+                {{- range .Values.extraArgs }}
+                - {{ . | quote }}
+                {{- end }}
+              env:
+                {{- if include "gcp-finops-dashboard.slackEnabled" . }}
+                - name: GCP_FINOPS_SLACK_WEBHOOK
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "gcp-finops-dashboard.slackSecretName" . }}
+                      key: {{ include "gcp-finops-dashboard.slackSecretKey" . }}
+                {{- end }}
+                {{- if .Values.gcpServiceAccountKey.existingSecret }}
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                  value: "/var/secrets/google/{{ .Values.gcpServiceAccountKey.key }}"
+                {{- end }}
+                {{- with .Values.env }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              {{- with .Values.envFrom }}
+              envFrom:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- with .Values.resources }}
+              resources:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/gcp-finops
+                  readOnly: true
+                - name: reports
+                  mountPath: {{ .Values.config.output_dir | default "/reports" | quote }}
+                - name: tmp
+                  mountPath: /tmp
+                {{- if .Values.gcpServiceAccountKey.existingSecret }}
+                - name: gcp-key
+                  mountPath: /var/secrets/google
+                  readOnly: true
+                {{- end }}
+          volumes:
+            - name: config
+              configMap:
+                name: {{ include "gcp-finops-dashboard.fullname" . }}
+            - name: reports
+              {{- if .Values.persistence.enabled }}
+              persistentVolumeClaim:
+                claimName: {{ .Values.persistence.existingClaim | default (printf "%s-reports" (include "gcp-finops-dashboard.fullname" .)) }}
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+            - name: tmp
+              emptyDir: {}
+            {{- if .Values.gcpServiceAccountKey.existingSecret }}
+            - name: gcp-key
+              secret:
+                secretName: {{ .Values.gcpServiceAccountKey.existingSecret }}
+            {{- end }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

@@ -28,3 +28,56 @@ jobs:
         run: mypy src
       - name: Pytest
         run: pytest --cov=gcp_finops_dashboard --cov-report=term-missing --cov-fail-under=85
+
+  # --- Deployment artifact validation (no push) -----------------------------
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: gcp-finops-dashboard:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke-test the image
+        run: docker run --rm gcp-finops-dashboard:ci --version
+
+  helm:
+    name: Helm lint & template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v4
+      - name: Lint
+        run: helm lint deploy/helm/gcp-finops-dashboard
+      - name: Template renders
+        run: |
+          helm template ci deploy/helm/gcp-finops-dashboard \
+            --set config.billing_account_id=01ABCD-23EFGH-456789 \
+            --set config.bq_table=p.d.t \
+            --set slack.webhook=https://hooks.slack.com/services/T/B/X \
+            > /dev/null
+
+  terraform:
+    name: Terraform validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v3
+      - name: Format check
+        run: terraform -chdir=deploy/terraform fmt -check -recursive
+      - name: Init & validate
+        run: |
+          terraform -chdir=deploy/terraform init -backend=false -input=false
+          terraform -chdir=deploy/terraform validate
