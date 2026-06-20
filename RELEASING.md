@@ -27,37 +27,40 @@ Actions. You never edit the version by hand.
    - creates the git tag (`v0.3.0`),
    - publishes the GitHub Release with auto-generated notes.
 
-4. The [`Release`](.github/workflows/release.yml) workflow runs on the published
-   release: it builds the `sdist` + `wheel`, attaches them to the release, and
-   publishes to PyPI.
+4. Two workflows run on the published release and attach artifacts to it:
+   - [`Release binaries`](.github/workflows/release-binaries.yml) builds
+     standalone single-file executables (Linux, macOS x86_64/arm64, Windows)
+     with PyInstaller and uploads them, each with a `.sha256` checksum.
+   - [`Publish Docker image`](.github/workflows/docker-publish.yml) builds and
+     pushes the multi-arch container image to GHCR.
 
 That's it — no manual tagging, version editing, or changelog writing.
 
-## One-time PyPI setup (Trusted Publishing)
+## Re-firing the publish workflows
 
-The PyPI publish job uses OIDC Trusted Publishing, so there is **no API token
-to manage**. Configure it once on PyPI:
+> **Important:** a release created by release-please uses the default
+> `GITHUB_TOKEN`, and GitHub does not let token-generated events trigger other
+> workflows. So merging the release PR creates the Release but the binary/Docker
+> workflows **do not start on their own**.
 
-1. Go to <https://pypi.org/manage/account/publishing/> (create the
-   `gcp-finops-dashboard` project first, or add it as a *pending* publisher).
-2. Add a **GitHub** trusted publisher with:
-   - **Owner:** `mrmichou`
-   - **Repository:** `gcp-finops-dashboard`
-   - **Workflow:** `release.yml`
-   - **Environment:** `pypi`
-3. In the GitHub repo settings, create an **Environment** named `pypi`
-   (Settings → Environments). Optionally add required reviewers to gate
-   publishing behind a manual approval.
+To actually publish the assets, re-fire the release with a real user token:
 
-Until this is configured, the `pypi-publish` job will fail, but the GitHub
-Release and its attached artifacts are created regardless — so nothing else
-breaks.
+```bash
+# Re-run the workflows for an existing release (simplest):
+gh workflow run "Release binaries" -f tag=v0.3.0
+# or re-publish the release to fire both workflows:
+gh release delete v0.3.0 --yes --cleanup-tag=false
+gh release create v0.3.0 --title v0.3.0 --notes-from-tag
+```
+
+(The permanent fix would be giving release-please a Personal Access Token so its
+release event triggers downstream workflows; not currently configured.)
 
 ## Notes
 
-- Pull requests opened by release-please use the default `GITHUB_TOKEN`. The
-  existing CI workflow still runs on them because it triggers on
-  `pull_request`. (If you ever need release-please's *own* push events to
-  trigger other workflows, switch the action to a Personal Access Token.)
+- Distribution is via the **GitHub Release binaries** and the **GHCR container
+  image** (plus the Helm chart). There is no PyPI publishing.
+- Pull requests opened by release-please use the default `GITHUB_TOKEN`. CI still
+  runs on them because it triggers on `pull_request`.
 - The current version lives in `.release-please-manifest.json` — it is managed
   automatically; don't edit it manually.
