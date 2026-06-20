@@ -31,15 +31,15 @@ jobs:
           - os: ubuntu-latest
             asset: gcp-finops-linux-x86_64
             bin: gcp-finops
-          - os: macos-13
-            asset: gcp-finops-macos-x86_64
-            bin: gcp-finops
           - os: macos-latest
             asset: gcp-finops-macos-arm64
             bin: gcp-finops
           - os: windows-latest
             asset: gcp-finops-windows-x86_64.exe
             bin: gcp-finops.exe
+          # macOS x86_64 (Intel) omitted: free macos-13 runners are unreliable
+          # for public repos. Intel Mac users can use the container image or
+          # build from source.
     steps:
       - uses: actions/checkout@v7
         with:
