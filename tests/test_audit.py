@@ -127,3 +127,81 @@ def test_run_audit_swallows_listing_errors():
 
     findings = run_audit(AuditClients(storage=_Boom()), ["proj"])
     assert findings == []
+
+
+# --- Listing helpers (thin GCP I/O wrappers) --------------------------------
+
+
+class _FakeAggregatedClient:
+    """Mimics a Compute client's ``aggregated_list`` over a single scope."""
+
+    def __init__(self, attr, items):
+        self._attr = attr
+        self._items = items
+
+    def aggregated_list(self, request=None):
+        return [("scope-a", ns(**{self._attr: self._items}))]
+
+
+def test_list_instances_flattens_zones():
+    client = _FakeAggregatedClient("instances", [ns(name="vm-1"), ns(name="vm-2")])
+    assert [i.name for i in audit._list_instances(client, "proj")] == ["vm-1", "vm-2"]
+
+
+def test_list_disks_flattens_zones():
+    client = _FakeAggregatedClient("disks", [ns(name="disk-1")])
+    assert [d.name for d in audit._list_disks(client, "proj")] == ["disk-1"]
+
+
+def test_list_addresses_flattens_regions():
+    client = _FakeAggregatedClient("addresses", [ns(name="ip-1")])
+    assert [a.name for a in audit._list_addresses(client, "proj")] == ["ip-1"]
+
+
+def test_list_functions_passes_parent():
+    class _FakeFunctions:
+        def list_functions(self, request=None):
+            assert request.parent == "projects/proj/locations/-"
+            return [ns(name="fn")]
+
+    assert [f.name for f in audit._list_functions(_FakeFunctions(), "proj")] == ["fn"]
+
+
+def test_safe_list_returns_empty_on_error():
+    def boom():
+        raise RuntimeError("nope")
+
+    assert audit._safe_list(boom) == []
+
+
+# --- run_audit dispatches over every resource type --------------------------
+
+
+def test_run_audit_flags_terminated_instance():
+    inst = ns(name="vm", zone="z/zones/us-a", status="TERMINATED", labels={})
+    client = _FakeAggregatedClient("instances", [inst])
+    findings = run_audit(AuditClients(instances=client), ["proj"])
+    assert [f.issue for f in findings] == ["stopped"]
+
+
+def test_run_audit_flags_unattached_disk():
+    disk = ns(name="d", zone="z/zones/us-a", users=[], size_gb=10, labels={})
+    client = _FakeAggregatedClient("disks", [disk])
+    findings = run_audit(AuditClients(disks=client), ["proj"])
+    assert [f.issue for f in findings] == ["unattached"]
+
+
+def test_run_audit_flags_reserved_address():
+    addr = ns(name="ip", region="r/regions/us-central1", status="RESERVED")
+    client = _FakeAggregatedClient("addresses", [addr])
+    findings = run_audit(AuditClients(addresses=client), ["proj"])
+    assert [f.issue for f in findings] == ["idle"]
+
+
+def test_run_audit_flags_untagged_function():
+    class _FakeFunctions:
+        def list_functions(self, request=None):
+            return [ns(name="projects/p/locations/us/functions/fn", labels={})]
+
+    findings = run_audit(AuditClients(functions=_FakeFunctions()), ["proj"], ["team"])
+    assert [f.issue for f in findings] == ["untagged"]
