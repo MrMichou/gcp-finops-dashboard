@@ -171,7 +171,7 @@ you can run it ad-hoc, in CI, or as a scheduled job on Kubernetes.
 ### Standalone binary
 
 Each GitHub Release attaches single-file executables (no Python or pip needed)
-for Linux, macOS (x86_64 and arm64) and Windows, built with PyInstaller by
+for Linux (x86_64), macOS (arm64) and Windows (x86_64), built with PyInstaller by
 [`.github/workflows/release-binaries.yml`](.github/workflows/release-binaries.yml).
 Each binary ships with a `.sha256` checksum.
 
