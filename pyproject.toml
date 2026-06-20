@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gcp-finops-dashboard"
-version = "0.2.0"
+version = "0.2.1"
 description = "A terminal-based GCP FinOps dashboard: cost breakdowns, trends and budgets across projects."
 readme = "README.md"
 license = { file = "LICENSE" }
