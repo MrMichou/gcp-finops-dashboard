@@ -66,6 +66,24 @@ def test_in_use_address_not_flagged():
     assert audit.check_address(addr, "proj") == []
 
 
+def test_reserved_address_with_users_not_flagged():
+    # Some attached addresses still report RESERVED; a non-empty `users` means
+    # the address is in use and must not be flagged as idle.
+    addr = ns(
+        name="ip-3",
+        region="proj/regions/us-central1",
+        status="RESERVED",
+        users=["projects/proj/.../forwardingRules/fr-1"],
+    )
+    assert audit.check_address(addr, "proj") == []
+
+
+def test_reserved_address_without_users_flagged():
+    addr = ns(name="ip-4", region="proj/regions/us-central1", status="RESERVED", users=[])
+    findings = audit.check_address(addr, "proj")
+    assert [f.issue for f in findings] == ["idle"]
+
+
 # --- GCS buckets ------------------------------------------------------------
 
 

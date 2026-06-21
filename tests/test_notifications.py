@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from contextlib import contextmanager
 
+import pytest
+
 from gcp_finops_dashboard import notifications
 from gcp_finops_dashboard.models import BudgetInfo, DashboardData, ServiceCost
 from gcp_finops_dashboard.notifications import build_slack_payload, send_slack_summary
@@ -64,3 +66,17 @@ def test_send_posts_json_to_webhook(monkeypatch):
     assert captured["url"].startswith("https://hooks.slack.com/")
     assert captured["content_type"] == "application/json"
     assert "blocks" in captured["body"]
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["file:///etc/passwd", "http://hooks.slack.com/services/T/B/X", "ftp://example.com"],
+)
+def test_send_rejects_non_https_webhook(url, monkeypatch):
+    def fail_urlopen(*args, **kwargs):  # pragma: no cover - must never be called
+        raise AssertionError("urlopen should not be reached for a non-https URL")
+
+    monkeypatch.setattr(notifications.urllib.request, "urlopen", fail_urlopen)
+
+    with pytest.raises(ValueError, match="https://"):
+        send_slack_summary(url, sample_dashboard())
