@@ -91,5 +91,14 @@ def sample_dashboard() -> DashboardData:
                 issue="untagged",
                 detail="Missing required label(s): team, env.",
             ),
+            ResourceFinding(
+                resource_type="cloud_sql_instance",
+                name="legacy-reporting-db",
+                project_id="data-platform",
+                location="us-central1",
+                issue="stopped",
+                detail="Cloud SQL instance is stopped but still bills for provisioned storage.",
+                estimated_monthly_cost=42.50,
+            ),
         ],
     )

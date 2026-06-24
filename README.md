@@ -20,7 +20,7 @@ formatted tables right in your terminal, plus CSV/JSON exports.
 - **Cost by project** — spend broken down per project (the GCP equivalent of AWS "profiles").
 - **6-month cost trend** — a terminal bar chart of monthly invoiced cost.
 - **Budget tracking** — configured budgets and threshold rules from the Cloud Billing Budgets API.
-- **Resource audit** — flag wasteful or non-compliant resources: stopped Compute instances, unattached persistent disks, idle reserved static IPs, GCS buckets without lifecycle rules, and resources missing required labels.
+- **Resource audit** — flag wasteful or non-compliant resources: stopped Compute instances, unattached persistent disks, idle reserved static IPs, GCS buckets without lifecycle rules, stopped Cloud SQL instances, and resources missing required labels.
 - **Exports** — CSV, JSON and PDF reports for spreadsheets or downstream tooling.
 - **Slack notifications** — post a run summary (total cost, top services, budget alerts, audit findings) to an incoming webhook.
 - **Multi-project** — analyse every project on a billing account by default, or filter to a list.
@@ -63,9 +63,10 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 The service account / user needs read access to the BigQuery export dataset
 (BigQuery Data Viewer + Job User on the billing project) and, for budgets,
 `billing.budgets.list` on the billing account. For `--audit`, it also needs
-read (`*.list`) access to Compute Engine, Cloud Storage and Cloud Functions on
-the audited projects (e.g. the `roles/viewer` role); resources whose API is
-unavailable or unauthorised are skipped rather than failing the run.
+read (`*.list`) access to Compute Engine, Cloud Storage, Cloud Functions and
+Cloud SQL on the audited projects (e.g. the `roles/viewer` role); resources
+whose API is unavailable or unauthorised are skipped rather than failing the
+run.
 
 ## Usage
 
@@ -103,7 +104,7 @@ gcp-finops --bq-table my-proj.billing_export.gcp_billing_export_v1_xxx \
 | `--billing-project ID` | Project that runs/pays for BigQuery jobs (defaults to the table's project). |
 | `--time-range DAYS` | Lookback window for service/project costs (default 30). |
 | `--trend` | Show the 6-month cost trend chart. |
-| `--audit` | Audit resources for waste/compliance (stopped VMs, unattached disks, idle IPs, buckets without lifecycle, untagged resources). |
+| `--audit` | Audit resources for waste/compliance (stopped VMs, unattached disks, idle IPs, buckets without lifecycle, stopped Cloud SQL instances, untagged resources). |
 | `--required-labels KEY [KEY ...]` | Label keys every resource must carry; missing ones are flagged as untagged. |
 | `--report-name NAME` | Base filename for exports (default `gcp-finops`). |
 | `--report-type csv json pdf` | Export formats (`pdf` needs the `pdf` extra). |
@@ -264,7 +265,7 @@ Growing toward parity with the AWS tool. Delivered in v0.2:
 
 Still planned:
 
-- [ ] Cloud SQL coverage in the resource audit (via the Cloud SQL Admin API)
+- [x] Cloud SQL coverage in the resource audit (via the Cloud SQL Admin API)
 - [ ] GCS report upload
 
 The exporter factory and the `CostSource` protocol remain the extension points

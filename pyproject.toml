@@ -26,6 +26,7 @@ dependencies = [
     "google-cloud-compute>=1.19",
     "google-cloud-storage>=2.18",
     "google-cloud-functions>=1.16",
+    "google-api-python-client>=2.100",
     "google-auth>=2.30",
 ]
 

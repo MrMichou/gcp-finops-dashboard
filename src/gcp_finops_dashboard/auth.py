@@ -109,3 +109,13 @@ def make_functions_client():
 
     credentials, _ = get_credentials()
     return functions_v2.FunctionServiceClient(credentials=credentials)
+
+
+def make_sql_client():
+    # The Cloud SQL Admin API has no GAPIC client, so it is accessed through the
+    # discovery-based google-api-python-client. cache_discovery is disabled to
+    # avoid the noisy file-cache warning under recent oauth2client-less setups.
+    from googleapiclient.discovery import build
+
+    credentials, _ = get_credentials()
+    return build("sqladmin", "v1beta4", credentials=credentials, cache_discovery=False)
