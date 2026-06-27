@@ -108,11 +108,18 @@ def check_disk(disk: Any, project_id: str, required_labels: list[str]) -> list[R
 
 
 def check_address(address: Any, project_id: str) -> list[ResourceFinding]:
-    """Flag a reserved-but-unused static IP address (these bill while idle)."""
+    """Flag a reserved-but-unused static IP address (these bill while idle).
+
+    Some attached addresses still report ``status == "RESERVED"``, so we also
+    require the address to have no ``users`` (mirroring the disk check) before
+    flagging it — an address bound to a resource is in use and should not bill
+    as idle.
+    """
     name = getattr(address, "name", "")
     region = _short(getattr(address, "region", "") or "")
     status = getattr(address, "status", "") or ""
-    if status == "RESERVED":
+    in_use = status == "IN_USE" or bool(getattr(address, "users", None))
+    if status == "RESERVED" and not in_use:
         return [
             ResourceFinding(
                 resource_type="static_ip",

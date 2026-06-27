@@ -149,4 +149,13 @@ def load_config(cli_overrides: dict[str, Any], config_file: str | None = None) -
     merged.update(_coerce(cli_overrides))
 
     config = replace(Config(), **merged)
+    _validate(config)
     return config
+
+
+def _validate(config: Config) -> None:
+    """Reject configuration values that would silently misbehave."""
+    if config.time_range_days <= 0:
+        raise ConfigError(
+            f"time_range_days must be a positive integer, got {config.time_range_days}."
+        )

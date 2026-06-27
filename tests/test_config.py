@@ -60,6 +60,12 @@ def test_missing_config_file_raises():
         load_config({}, config_file="/nonexistent/path.toml")
 
 
+@pytest.mark.parametrize("bad", [0, -1, -30])
+def test_non_positive_time_range_rejected(bad):
+    with pytest.raises(ConfigError, match="time_range_days must be a positive integer"):
+        load_config({"time_range_days": bad}, config_file=None)
+
+
 def test_effective_billing_project_inferred():
     config = Config(bq_table="my-proj.ds.tbl")
     assert config.effective_billing_project == "my-proj"

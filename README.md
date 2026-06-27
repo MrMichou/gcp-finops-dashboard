@@ -101,14 +101,14 @@ gcp-finops --bq-table my-proj.billing_export.gcp_billing_export_v1_xxx \
 | `--billing-account ID` | Billing account ID, used for budgets and project listing. |
 | `--bq-table P.D.T` | Fully-qualified BigQuery billing export table. |
 | `--billing-project ID` | Project that runs/pays for BigQuery jobs (defaults to the table's project). |
-| `--time-range DAYS` | Lookback window for service/project costs (default 30). |
+| `--time-range DAYS` | Lookback window for service/project costs (default 30, must be a positive integer). |
 | `--trend` | Show the 6-month cost trend chart. |
 | `--audit` | Audit resources for waste/compliance (stopped VMs, unattached disks, idle IPs, buckets without lifecycle, untagged resources). |
 | `--required-labels KEY [KEY ...]` | Label keys every resource must carry; missing ones are flagged as untagged. |
 | `--report-name NAME` | Base filename for exports (default `gcp-finops`). |
 | `--report-type csv json pdf` | Export formats (`pdf` needs the `pdf` extra). |
 | `--dir PATH` | Output directory for reports (default `./reports`). |
-| `--slack-webhook URL` | Post a run summary to a Slack incoming webhook (env `GCP_FINOPS_SLACK_WEBHOOK`). |
+| `--slack-webhook URL` | Post a run summary to a Slack incoming webhook (must be `https://`; env `GCP_FINOPS_SLACK_WEBHOOK`). |
 | `--config-file PATH` | TOML/YAML/JSON config file. |
 | `--dry-run` | Use bundled sample data — no GCP calls. |
 

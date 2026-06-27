@@ -64,9 +64,14 @@ def send_slack_summary(webhook_url: str, data: DashboardData, timeout: float = 1
     Raises on transport/HTTP failure; callers decide whether that should abort
     the run (the CLI logs it and keeps going).
     """
+    if not webhook_url.startswith("https://"):
+        raise ValueError(
+            "Slack webhook URL must use the https:// scheme; refusing to send "
+            f"to {webhook_url!r}."
+        )
     payload = json.dumps(build_slack_payload(data)).encode("utf-8")
     request = urllib.request.Request(
         webhook_url, data=payload, headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310 - user-supplied webhook
+    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310 - https scheme enforced above
         response.read()
